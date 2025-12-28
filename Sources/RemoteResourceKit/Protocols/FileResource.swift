@@ -12,15 +12,8 @@ public protocol FileResource: FileRepresentative {
 }
 
 public extension FileResource {
-    func download(at path: URL) async throws {
+    func iterate(at path: URL, map: inout [URL: [(URL, FileRepresentative)]]) {
         let url = createURL(path: path, isDirectory: false)
-        let (data, res) = try await URLSession.shared.data(from: remoteURL)
-        if let res = res as? HTTPURLResponse, res.statusCode == 200 {
-            try data.write(to: url)
-        }
-    }
-    
-    func cancel(resumeDataURL: URL?) {
-        
+        map[remoteURL, default: []].append((url, self))
     }
 }

@@ -3,23 +3,20 @@
 
 import Foundation
 
-//public extension Array where Element == Resource {
-//    func download() async -> [Error?] {
-//        var arrErr: [Error?] = []
-//        let tasks = self.map { resource in
-//            Task {
-//                try await resource.download()
-//            }
-//        }
-//        
-//        for t in tasks {
-//            do {
-//                try await t.value
-//                arrErr.append(nil)
-//            } catch {
-//                arrErr.append(error)
-//            }
-//        }
-//        return arrErr
-//    }
-//}
+struct X: DownloadGroup {
+    var body: [any FileRepresentative] {
+    
+//    var body: some FileRepresentative {
+        Folder(name: "folderName") {
+            Folder(name: "folderName22") {
+                File(name: "filename.txt", remoteURL: URL(string: "URL/to/My/asset")!)
+            }
+        }
+        
+        //        Folder(name: "folderNa") {
+        //
+        //        }
+    }
+    
+    var baseURL: URL = URL(string: "")!
+}

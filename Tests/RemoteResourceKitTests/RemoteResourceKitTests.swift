@@ -13,14 +13,18 @@ final class RemoteResourceKitTests: XCTestCase {
 }
 
 struct X: DownloadGroup {
-    var baseURL: URL = URL(string: "")!
-    
-    var body: some FileRepresentative {
+    var body: [any FileRepresentative] {
+//    var body: some FileRepresentative {
         Folder(name: "folderName") {
             Folder(name: "folderName22") {
                 File(name: "filename.txt", remoteURL: URL(string: "URL/to/My/asset")!)
-//                Resource(remoteURL: URL(string: "")!, localURL: URL(string: "")!)
             }
         }
+        
+//        Folder(name: "folderNa") {
+//
+//        }
     }
+    
+    var baseURL: URL = URL(string: "")!
 }
