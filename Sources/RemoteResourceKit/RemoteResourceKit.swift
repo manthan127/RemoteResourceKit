@@ -9,7 +9,7 @@ struct X: DownloadGroup {
 //    var body: some FileRepresentative {
         Folder(name: "folderName") {
             Folder(name: "folderName22") {
-                File(name: "filename.txt", remoteURL: URL(string: "URL/to/My/asset")!)
+                File(name: "filename.txt", urlRequest: URLRequest(url: URL(string: "URL/to/My/asset")!))
             }
         }
         
@@ -19,4 +19,9 @@ struct X: DownloadGroup {
     }
     
     var baseURL: URL = URL(string: "")!
+}
+
+
+func x() async {
+    await DownloadSession(resumeDataURL: nil).download(X())
 }

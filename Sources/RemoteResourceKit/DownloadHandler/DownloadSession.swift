@@ -8,33 +8,44 @@
 import Foundation
 
 // TODO: - make option for parallel calling or serial Calling
-final class DownloadHandler: NSObject {
-    private lazy var session: URLSession = { URLSession.shared }()
+final public class DownloadSession: NSObject {
+    private var session: URLSession
     
-    let registry = APIRegistry()
-    let resumeDataManager: ResumeDataHandler?
+    private var delegate: (any URLSessionTaskDelegate)?
     
-    init(resumeDataURL url: URL?) {
+    private let registry = APIRegistry()
+    private let resumeDataManager: ResumeDataHandler?
+    
+    init(resumeDataURL url: URL? = nil, session: URLSession = .shared) {
+        self.session = session
         self.resumeDataManager = url.map { ResumeDataHandler(url: $0) }
     }
     
-    // TODO: - (user might even call cancel even before loop is finished)
-    func download(map: [URL: [FileDestination]]) async {
-        for (key, val) in map {
-            do {
-                try await download(remoteURL: key, destinations: val)
-            } catch {
-                // TODO: - return all the collected errors and warnings
-            }
+    @available(iOS 15.0, *)
+    init(resumeDataURL url: URL? = nil, delegate: any URLSessionTaskDelegate) {
+        self.session = .shared
+        self.delegate = delegate
+        self.resumeDataManager = url.map { ResumeDataHandler(url: $0) }
+    }
+    
+    // TODO: - return all the collected errors and warnings
+    func download(_ downloadGroup: any DownloadGroup, parallel: Bool = true) async {
+        let mapping = downloadGroup.makeMapping()
+        if parallel {
+            await downloadParallel(map: mapping)
+        } else {
+            await downloadSerial(map: mapping)
         }
     }
     
-    func cancel() async {
+    func cancel(resumeDataURL: URL? = nil) async {
+        let resumeDataManager = resumeDataURL.map { ResumeDataHandler(url: $0) } ?? self.resumeDataManager
+        
         let reg = await registry.registry
-        for (url, task) in reg {
+        for (urlReq, task) in reg {
             if let resumeDataManager, let data = await task.cancelByProducingResumeData() {
                 do {
-                    try await resumeDataManager.save(remoteURL: url, data: data)
+                    try await resumeDataManager.save(urlRequest: urlReq, data: data)
                 } catch {
                     // TODO: - return all the collected errors and warnings
                 }
@@ -47,8 +58,33 @@ final class DownloadHandler: NSObject {
     }
 }
 
-private extension DownloadHandler {
-    func download(remoteURL: URL, destinations: [FileDestination]) async throws {
+private extension DownloadSession {
+    // TODO: - (user might even call cancel even before loop is finished)
+    func downloadSerial(map: [URLRequest: [FileDestination]]) async {
+        for (key, val) in map {
+            do {
+                try await self.download(urlRequest: key, destinations: val)
+            } catch {
+                // TODO: - return all the collected errors and warnings
+            }
+        }
+    }
+    
+    func downloadParallel(map: [URLRequest: [FileDestination]]) async {
+        await withTaskGroup(of: Void.self) { group in
+            for (key, val) in map {
+                group.addTask {
+                    do {
+                        try await self.download(urlRequest: key, destinations: val)
+                    } catch {
+                        // TODO: - return all the collected errors and warnings
+                    }
+                }
+            }
+        }
+    }
+    
+    func download(urlRequest: URLRequest, destinations: [FileDestination]) async throws {
         // MARK: - might need to handle for each element  individually because of some property like always download in future
         if let ind = destinations.firstIndex(where: { FileManager.default.fileExists(at: $0.url) }) {
             let url = destinations[ind].url
@@ -62,7 +98,7 @@ private extension DownloadHandler {
             return
         }
         
-        let resumeData = await resumeDataManager?.data(remoteURL: remoteURL)
+        let resumeData = await resumeDataManager?.data(urlRequest: urlRequest)
        
         try await withCheckedThrowingContinuation { cont in
             let completionHandler: @Sendable (URL?, URLResponse?, (any Error)?) -> Void = { url, res, err in
@@ -74,14 +110,15 @@ private extension DownloadHandler {
             if let resumeData {
                 task = session.downloadTask(withResumeData: resumeData, completionHandler: completionHandler)
             } else {
-                task = session.downloadTask(with: remoteURL, completionHandler: completionHandler)
+                task = session.downloadTask(with: urlRequest, completionHandler: completionHandler)
+            }
+            
+            if #available(iOS 15.0, *), let delegate {
+                task.delegate = delegate
             }
             
             Task {
-                await registry.create(
-                    remoteURL: remoteURL,
-                    task: task
-                )
+                await registry.create(remoteURL: urlRequest, task: task)
                 
                 task.resume()
             }

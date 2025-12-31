@@ -8,13 +8,13 @@
 import Foundation
 
 actor APIRegistry {
-    private(set) var registry: [URL: URLSessionDownloadTask] = [:]
+    private(set) var registry: [URLRequest: URLSessionDownloadTask] = [:]
     
-    func containsEntry(for url: URL) -> Bool {
+    func containsEntry(for url: URLRequest) -> Bool {
         registry[url] != nil
     }
     
-    func create(remoteURL: URL, task: URLSessionDownloadTask) {
+    func create(remoteURL: URLRequest, task: URLSessionDownloadTask) {
         registry[remoteURL] = task
     }
     

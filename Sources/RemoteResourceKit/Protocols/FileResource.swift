@@ -8,12 +8,12 @@
 import Foundation
 
 public protocol FileResource: FileRepresentative {
-    var remoteURL: URL {get}
+    var urlRequest: URLRequest {get}
 }
 
-public extension FileResource {
-    func iterate(at path: URL, map: inout [URL: [(URL, FileRepresentative)]]) {
+internal extension FileResource {
+    func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
         let url = createURL(path: path, isDirectory: false)
-        map[remoteURL, default: []].append((url, self))
+        map[urlRequest, default: []].append(.init(url: url, fileRepresentative: self))
     }
 }

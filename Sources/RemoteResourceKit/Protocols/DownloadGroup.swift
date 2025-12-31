@@ -25,35 +25,9 @@ extension DownloadGroup {
     var resumeDataURL: URL? { nil }
 }
 
-public extension DownloadGroup {
-//    func hash(into hasher: inout Hasher) {
-//        hasher.combine(baseURL)
-//        if let resumeDataURL {
-//            hasher.combine(resumeDataURL)
-//        }
-//    }
-    
-    // TODO: - might be issue where two different struct are referring to same local url and are calling api in parrallel(might even have different remote url causing  race condition where one will overwrite other one)
-    internal var downloadHandler: DownloadHandler {
-        get async {
-            await DownloadHandlerFactory.shared.object(for: self)
-        }
-    }
-    
-    // TODO: - return all the collected errors and warings
-    func download() async {
-        let map = makeMapping()
-        await downloadHandler.download(map: map)
-    }
-    
-    func cancel() async {
-        await downloadHandler.cancel()
-    }
-}
-
-private extension DownloadGroup {
-    func makeMapping() -> [URL: [FileDestination]] {
-        var map: [URL: [FileDestination]] = [:]
+extension DownloadGroup {
+    func makeMapping() -> [URLRequest: [FileDestination]] {
+        var map: [URLRequest: [FileDestination]] = [:]
         body.forEach {
             $0.iterate(at: baseURL, map: &map)
         }

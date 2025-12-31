@@ -26,7 +26,8 @@ actor ResumeDataHandler {
     
     // MARK: - Public API
     /// Saves the remote URL to the plist and the data to a sibling file.
-    func save(remoteURL: URL, data: Data) throws {
+    func save(urlRequest: URLRequest, data: Data) throws {
+        guard let remoteURL = urlRequest.url else {return}
         let fileName = UUID().uuidString
         mapping[remoteURL] = fileName
         
@@ -39,14 +40,15 @@ actor ResumeDataHandler {
         try saveMappingToDisk()
     }
     
-    func data(remoteURL: URL) -> Data? {
-        guard let name = mapping[remoteURL] else { return nil }
+    func data(urlRequest: URLRequest) -> Data? {
+        guard let remoteURL = urlRequest.url, let name = mapping[remoteURL] else { return nil }
         return try? Data(contentsOf: url.appendingPathComponent(name))
     }
-    
+}
     // MARK: - Persistence
     /// Loads mapping.plist into memory
-    private static func loadMappingFromDisk(plistURL: URL) -> [URL: String] {
+private extension ResumeDataHandler {
+    static func loadMappingFromDisk(plistURL: URL) -> [URL: String] {
         guard
             let data = try? Data(contentsOf: plistURL),
             let raw = try? PropertyListSerialization.propertyList(

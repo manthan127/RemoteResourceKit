@@ -13,7 +13,7 @@ public protocol FileRepresentative {
 }
 
 extension FileRepresentative {
-    func iterate(at path: URL, map: inout [URL: [FileDestination]]) {}
+    func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {}
     
     func createURL(path: URL, isDirectory: Bool) -> URL {
         if #available(iOS 16.0, macOS 13.0, *) {
