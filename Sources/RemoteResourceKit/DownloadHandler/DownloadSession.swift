@@ -138,7 +138,7 @@ private extension DownloadSession {
         if let url {
             for destination in destinations {
                 do {
-                    // MARK: - can optimize my moving the file instead of copying the file(only makes difference in the case of big files) // let the user decide what to do `move` or `copy`
+                    // MARK: - can optimize my moving the file instead of copying the file(only makes visible difference in the case of big files) // let the user decide what to do `move` or `copy`
                     try self.copy(url, to: destination.url)
                 } catch {
                     // TODO: - return all the collected errors and warnings(download is success for some reason can not move files)

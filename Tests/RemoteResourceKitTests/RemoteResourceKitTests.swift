@@ -3,7 +3,6 @@ import XCTest
 
 final class RemoteResourceKitTests: XCTestCase {
     func testExample() throws {
-        
         // XCTest Documentation
         // https://developer.apple.com/documentation/xctest
 
@@ -13,18 +12,31 @@ final class RemoteResourceKitTests: XCTestCase {
 }
 
 struct X: DownloadGroup {
+    var baseURL: URL = URL(string: "")!
+    
     var body: [any FileRepresentative] {
-//    var body: some FileRepresentative {
+        //    var body: some FileRepresentative {
         Folder(name: "folderName") {
             Folder(name: "folderName22") {
-                File(name: "filename.txt", remoteURL: URL(string: "URL/to/My/asset")!)
+                File(name: "filename.txt", urlRequest: URLRequest(url: URL(string: "URL/to/My/asset")!))
+                
+                if Int.random(in: 0...5) < 2 {
+                    File(name: "filename.txt", url: URL(string: "URL/to/My/asset")!)
+                }
+                File(name: "filename.txt", urlString: "URL/to/My/asset")
             }
+            File(name: "filename.txt", urlString: "URL/to/My/asset")
         }
         
-//        Folder(name: "folderNa") {
-//
-//        }
+        File(name: "filename.txt", urlRequest: URLRequest(url: URL(string: "URL/to/My/asset")!))
+        Folder(name: "folderNa") {
+            
+        }
     }
-    
-    var baseURL: URL = URL(string: "")!
 }
+
+
+func x() async {
+    await DownloadSession(resumeDataURL: nil).download(X())
+}
+

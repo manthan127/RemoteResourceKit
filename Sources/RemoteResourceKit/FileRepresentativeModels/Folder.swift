@@ -1,8 +1,8 @@
 //
-//  File.swift
+//  File 2.swift
+//  
 //
-//
-//  Created by Home on 15/12/25.
+//  Created by Home on 11/01/26.
 //
 
 import Foundation
@@ -17,10 +17,4 @@ public struct Folder: FileRepresentative {
             $0.iterate(at: url, map: &map)
         }
     }
-}
-
-
-public struct File: FileResource {
-    public let name: String
-    public let urlRequest: URLRequest
 }
