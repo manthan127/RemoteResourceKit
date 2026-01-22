@@ -20,13 +20,4 @@ public struct File: FileResource {
         self.name = name
         self.urlRequest = URLRequest(url: url)
     }
-    
-    public init?(name: String, urlString: String) {
-        if let url = URL(string: urlString) {
-            self.name = name
-            self.urlRequest = URLRequest(url: url)
-        } else {
-            return nil
-        }
-    }
 }
