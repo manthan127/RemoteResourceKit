@@ -86,11 +86,11 @@ private extension DownloadSession {
     
     func download(urlRequest: URLRequest, destinations: [FileDestination]) async throws {
         // MARK: - might need to handle for each element  individually because of some property like always download in future
-        if let ind = destinations.firstIndex(where: { FileManager.default.fileExists(at: $0.url) }) {
-            let url = destinations[ind].url
-            for destination in destinations where !FileManager.default.fileExists(at: destination.url) {
+        if let ind = destinations.firstIndex(where: { FileManager.default.fileExists(at: $0.folderURL) }) {
+            let url = destinations[ind].folderURL
+            for destination in destinations where !FileManager.default.fileExists(at: destination.folderURL) {
                 do {
-                    try copy(url, to: destination.url)
+                    try copy(url, to: destination)
                 } catch {
                     // TODO: - return all the collected errors and warings
                 }
@@ -111,10 +111,6 @@ private extension DownloadSession {
                 task = session.downloadTask(withResumeData: resumeData, completionHandler: completionHandler)
             } else {
                 task = session.downloadTask(with: urlRequest, completionHandler: completionHandler)
-            }
-            
-            if #available(iOS 15.0, *), let delegate {
-                task.delegate = delegate
             }
             
             Task {
@@ -139,7 +135,7 @@ private extension DownloadSession {
             for destination in destinations {
                 do {
                     // MARK: - can optimize my moving the file instead of copying the file(only makes visible difference in the case of big files) // let the user decide what to do `move` or `copy`
-                    try self.copy(url, to: destination.url)
+                    try copy(url, to: destination)
                 } catch {
                     // TODO: - return all the collected errors and warnings(download is success for some reason can not move files)
                 }
@@ -152,24 +148,20 @@ private extension DownloadSession {
         cont.resume(throwing: URLError.init(.badServerResponse))
     }
     
-    func copy(_ tempURL: URL, to destination: URL) throws {
+    func copy(_ tempURL: URL, to destination: FileDestination) throws {
         try FileManager.default.createDirectory(
-            at: destination.deletingLastPathComponent(),
+            at: destination.folderURL,
             withIntermediateDirectories: true
         )
         
-        if FileManager.default.fileExists(at: destination) {
-            try FileManager.default.removeItem(at: destination)
-        }
-        
-        try FileManager.default.copyItem(at: tempURL, to: destination)
+        try FileManager.default.copyItem(at: tempURL, to: destination.destinationURL)
     }
 }
 
 extension FileManager {
     func fileExists(at path: URL) -> Bool {
         if #available(iOS 16.0, *) {
-            fileExists(atPath: path.path(percentEncoded: false))
+            fileExists(atPath: path.path(percentEncoded: true))
         } else {
             fileExists(atPath: path.path)
         }

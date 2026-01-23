@@ -12,7 +12,7 @@ public struct Folder: FileRepresentative {
     @ResourceBuilder var resources: ()-> [any FileRepresentative]
     
     internal func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
-        let url = createURL(path: path, isDirectory: true)
+        let url = path.appendingPathComponent(name, isDirectory: true)
         resources().forEach {
             $0.iterate(at: url, map: &map)
         }
