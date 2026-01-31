@@ -7,29 +7,19 @@
 
 import Foundation
 
-// TODO: - make option for parallel calling or serial Calling
 final public class DownloadSession: NSObject {
     private var session: URLSession
-    
-    private var delegate: (any URLSessionTaskDelegate)?
     
     private let registry = APIRegistry()
     private let resumeDataManager: ResumeDataHandler?
     
-    init(resumeDataURL url: URL? = nil, session: URLSession = .shared) {
+    public init(resumeDataURL url: URL? = nil, session: URLSession = .shared) {
         self.session = session
         self.resumeDataManager = url.map { ResumeDataHandler(url: $0) }
     }
     
-    @available(iOS 15.0, *)
-    init(resumeDataURL url: URL? = nil, delegate: any URLSessionTaskDelegate) {
-        self.session = .shared
-        self.delegate = delegate
-        self.resumeDataManager = url.map { ResumeDataHandler(url: $0) }
-    }
-    
     // TODO: - return all the collected errors and warnings
-    func download(_ downloadGroup: any DownloadGroup, parallel: Bool = true) async {
+    public func download(_ downloadGroup: DownloadGroup, parallel: Bool = true) async {
         let mapping = downloadGroup.makeMapping()
         if parallel {
             await downloadParallel(map: mapping)
@@ -38,7 +28,7 @@ final public class DownloadSession: NSObject {
         }
     }
     
-    func cancel(resumeDataURL: URL? = nil) async {
+    public func cancel(resumeDataURL: URL? = nil) async {
         let resumeDataManager = resumeDataURL.map { ResumeDataHandler(url: $0) } ?? self.resumeDataManager
         
         let reg = await registry.registry
@@ -90,9 +80,12 @@ private extension DownloadSession {
             let url = destinations[ind].folderURL
             for destination in destinations where !FileManager.default.fileExists(at: destination.folderURL) {
                 do {
-                    try copy(url, to: destination)
+                    try destination.copy(url)
                 } catch {
                     // TODO: - return all the collected errors and warings
+                    Task {
+                        await destination.fileRepresentative.errorHandler?(error)
+                    }
                 }
             }
             return
@@ -100,61 +93,19 @@ private extension DownloadSession {
         
         let resumeData = await resumeDataManager?.data(urlRequest: urlRequest)
        
-        try await withCheckedThrowingContinuation { cont in
-            let completionHandler: @Sendable (URL?, URLResponse?, (any Error)?) -> Void = { url, res, err in
-                self.apiResponse(url: url, response: res, err: err, destinations: destinations, cont: cont)
-            }
-            
-            let task: URLSessionDownloadTask
-            
-            if let resumeData {
-                task = session.downloadTask(withResumeData: resumeData, completionHandler: completionHandler)
+        let url = try await withCheckedThrowingContinuation { continuation in
+            let task: URLSessionDownloadTask = if let resumeData {
+                session.downloadTask(withResumeData: resumeData)
             } else {
-                task = session.downloadTask(with: urlRequest, completionHandler: completionHandler)
+                session.downloadTask(with: urlRequest)
             }
-            
+            task.delegate = DownloadDelegate(continuation: continuation, destinations: destinations)
             Task {
                 await registry.create(remoteURL: urlRequest, task: task)
                 
                 task.resume()
             }
         }
-    }
-    
-    func apiResponse(
-        url: URL?, response: URLResponse?, err: Error?,
-        destinations: [FileDestination],
-        cont: CheckedContinuation<Void, Error>
-    ) {
-        if let err {
-            cont.resume(throwing: err)
-            return
-        }
-        
-        if let url {
-            for destination in destinations {
-                do {
-                    // MARK: - can optimize my moving the file instead of copying the file(only makes visible difference in the case of big files) // let the user decide what to do `move` or `copy`
-                    try copy(url, to: destination)
-                } catch {
-                    // TODO: - return all the collected errors and warnings(download is success for some reason can not move files)
-                }
-            }
-            cont.resume(returning: ())
-            return
-        }
-        
-        // MARK: - unknown state // ideally this will not be triggered
-        cont.resume(throwing: URLError.init(.badServerResponse))
-    }
-    
-    func copy(_ tempURL: URL, to destination: FileDestination) throws {
-        try FileManager.default.createDirectory(
-            at: destination.folderURL,
-            withIntermediateDirectories: true
-        )
-        
-        try FileManager.default.copyItem(at: tempURL, to: destination.destinationURL)
     }
 }
 

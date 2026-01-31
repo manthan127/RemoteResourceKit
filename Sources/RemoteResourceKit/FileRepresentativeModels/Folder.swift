@@ -9,9 +9,14 @@ import Foundation
 
 public struct Folder: FileRepresentative {
     public let name: String
-    @ResourceBuilder var resources: ()-> [any FileRepresentative]
+    @ResourceBuilder public var resources: ()-> [any FileRepresentative]
     
-    internal func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
+    public init(name: String, @ResourceBuilder  resources: @escaping () -> [any FileRepresentative]) {
+        self.name = name
+        self.resources = resources
+    }
+    
+    public func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
         let url = path.appendingPathComponent(name, isDirectory: true)
         resources().forEach {
             $0.iterate(at: url, map: &map)

@@ -7,14 +7,9 @@
 
 import Foundation
 
-public protocol DownloadGroup: Hashable {
+public protocol DownloadGroup {
     var baseURL: URL {get}
     var resumeDataURL: URL? {get}
-    
-    //    associatedtype F: FileRepresentative
-    //
-    //    @ResourceBuilder
-    //    var body: F { get }
     
     @ResourceBuilder
     var body: [any FileRepresentative] { get }

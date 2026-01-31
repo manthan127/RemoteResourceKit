@@ -8,8 +8,11 @@
 import Foundation
 
 public struct File: FileResource {
-    public var name: String?
-    public var urlRequest: URLRequest
+    public var downloadComplete: URLAsyncHandler?
+    public var errorHandler: ErrorAsyncHandler?
+    
+    public let name: String?
+    public let urlRequest: URLRequest
     
     public init(name: String?, urlRequest: URLRequest) {
         self.name = name
