@@ -24,12 +24,19 @@ public struct FileDestination {
 
 
 internal extension FileDestination {
-    func copy(_ tempURL: URL) throws {
-        try FileManager.default.createDirectory(
-            at: folderURL,
-            withIntermediateDirectories: true
-        )
-        
-        try FileManager.default.copyItem(at: tempURL, to: destinationURL)
+    func copyAndSendMessage(_ tempURL: URL) {
+        do {
+            try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
+            
+            try FileManager.default.copyItem(at: tempURL, to: destinationURL)
+            
+            Task {
+                await fileRepresentative.downloadComplete?(destinationURL)
+            }
+        } catch {
+            Task {
+                await fileRepresentative.errorHandler?(error)
+            }
+        }
     }
 }

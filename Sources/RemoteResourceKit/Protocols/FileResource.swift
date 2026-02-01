@@ -29,6 +29,7 @@ internal extension FileResource {
     }
 }
 
+// TODO: not sure if callback should be in async or not
 public extension FileResource {
     func onDownloadComplete(action: @escaping URLAsyncHandler) -> Self {
         var copy = self
