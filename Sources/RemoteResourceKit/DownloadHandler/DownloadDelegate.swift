@@ -10,9 +10,14 @@ import Foundation
 // MARK: - need to conform to AnyObject for making variable weak, can not use conform this protocol to a struct or actor
 public protocol DownloadSessionDelegate: AnyObject {
     //TODO: - need to use both `completion handler method` and `async method` only using async one right now for testing
-    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse) async throws -> URLSession.ResponseDisposition
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse) async throws -> ResponseDisposition
     
-//    @objc optional func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void)
+//    @objc optional func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping @Sendable (ResponseDisposition) -> Void)
+}
+
+public enum ResponseDisposition {
+    case allow
+    case cancel
 }
 
 // URLSessionTaskDelegate : URLSessionDelegate
@@ -50,9 +55,9 @@ extension DownloadDelegate: URLSessionDataDelegate {
             let responseDisposition = try await delegate?.urlSession(session, dataTask: dataTask, didReceive: response)
             
             switch responseDisposition {
-            case .cancel, .becomeStream:
+            case .cancel:
                 return .cancel
-            case .allow, .becomeDownload, nil:
+            case .allow, nil:
                 return .becomeDownload
             }
         } catch {
