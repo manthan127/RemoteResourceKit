@@ -70,7 +70,7 @@ private extension DownloadSession {
             try await self.download(urlRequest: req, destinations: destinations)
         } catch {
             for destination in destinations {
-                await destination.fileRepresentative.errorHandler?(error)
+                destination.fileRepresentative.errorHandler?(error)
             }
         }
     }

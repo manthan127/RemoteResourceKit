@@ -8,8 +8,7 @@
 import Foundation
 
 public struct File: FileResource {
-    public var downloadComplete: URLAsyncHandler?
-    public var errorHandler: ErrorAsyncHandler?
+    public var completionsGroup = CompletionsGroup()
     
     public let name: String?
     public let urlRequest: URLRequest

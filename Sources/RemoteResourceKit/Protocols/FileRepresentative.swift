@@ -22,7 +22,6 @@ public struct FileDestination {
     }
 }
 
-
 internal extension FileDestination {
     func copyAndSendMessage(_ tempURL: URL) {
         do {
@@ -30,13 +29,9 @@ internal extension FileDestination {
             
             try FileManager.default.copyItem(at: tempURL, to: destinationURL)
             
-            Task {
-                await fileRepresentative.downloadComplete?(destinationURL)
-            }
+            fileRepresentative.downloadComplete?(destinationURL)
         } catch {
-            Task {
-                await fileRepresentative.errorHandler?(error)
-            }
+            fileRepresentative.errorHandler?(error)
         }
     }
 }

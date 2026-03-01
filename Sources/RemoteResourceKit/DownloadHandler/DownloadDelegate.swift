@@ -80,6 +80,18 @@ extension DownloadDelegate: URLSessionDownloadDelegate {
         _ session: URLSession, downloadTask: URLSessionDownloadTask,
         didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64
     ) {
-        Float(totalBytesWritten) / Float(totalBytesExpectedToWrite)
+        for destination in destinations {
+            destination.fileRepresentative.downloadProgressDataHandler?(bytesWritten, totalBytesWritten, totalBytesExpectedToWrite)
+        }
+        
+        guard totalBytesExpectedToWrite > 0 else { return }
+        
+        let p = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+        for destination in destinations {
+            destination.fileRepresentative.downloadProgressHandler?(p)
+        }
     }
 }
+
+
+//https://download.blender.org/demo/2_big_buck_bunny_v2.pdf

@@ -7,38 +7,57 @@
 
 import Foundation
 
-public typealias URLAsyncHandler = (URL) async -> Void
-public typealias ErrorAsyncHandler = (Error) async -> Void
-
-// TODO: - need to manage encapsulation of the variable names
+@dynamicMemberLookup
 public protocol FileResource: FileRepresentative {
     var name: String? {get}
     var urlRequest: URLRequest {get}
     
-    var downloadComplete: URLAsyncHandler? {get set}
-    var errorHandler: ErrorAsyncHandler? {get set}
+    var completionsGroup: CompletionsGroup {get set}
+}
+
+public extension FileResource {
+    func onDownloadComplete(action: @escaping URLAsyncHandler) -> Self {
+        setting(\.downloadComplete, to: action)
+    }
+    func onError(action: @escaping ErrorAsyncHandler) -> Self {
+        setting(\.errorHandler, to: action)
+    }
+    
+    func downloadProgress(action: @escaping DownloadProgressHandler) -> Self {
+        setting(\.downloadProgressHandler, to: action)
+    }
+    
+    func downloadProgressData(action: @escaping DownloadProgressDataHandler) -> Self {
+        setting(\.downloadProgressDataHandler, to: action)
+    }
+}
+
+public extension FileResource {
+    subscript<T>(dynamicMember keyPath: WritableKeyPath<CompletionsGroup, T>) -> T {
+        get {
+            completionsGroup[keyPath: keyPath]
+        }
+        set {
+            completionsGroup[keyPath: keyPath] = newValue
+        }
+    }
+    
+    func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
+        map[urlRequest, default: []].append(.init(folderURL: path, fileRepresentative: self))
+    }
 }
 
 internal extension FileResource {
-    public func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
-        map[urlRequest, default: []].append(.init(folderURL: path, fileRepresentative: self))
-    }
-    
     var fileName: String  {
         name ?? urlRequest.url!.lastPathComponent
     }
-}
 
-// TODO: not sure if callback should be in async or not
-public extension FileResource {
-    func onDownloadComplete(action: @escaping URLAsyncHandler) -> Self {
+    private func setting<Value>(
+        _ keyPath: WritableKeyPath<Self, Value>,
+        to newValue: Value
+    ) -> Self {
         var copy = self
-        copy.downloadComplete = action
-        return copy
-    }
-    func onError(action: @escaping ErrorAsyncHandler) -> Self {
-        var copy = self
-        copy.errorHandler = action
+        copy[keyPath: keyPath] = newValue
         return copy
     }
 }
