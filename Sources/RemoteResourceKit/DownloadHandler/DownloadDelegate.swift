@@ -70,9 +70,7 @@ extension DownloadDelegate: URLSessionDataDelegate {
 extension DownloadDelegate: URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         // MARK: - can optimize my moving the file instead of copying the file(only makes visible difference in the case of big files) // let the user decide what to do `move` or `copy`
-        for destination in destinations {
-            destination.copyAndSendMessage(location)
-        }
+        destinations.copyAndSendMessage(location)
         continuation.resume(returning: ())
     }
     
@@ -80,16 +78,12 @@ extension DownloadDelegate: URLSessionDownloadDelegate {
         _ session: URLSession, downloadTask: URLSessionDownloadTask,
         didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64
     ) {
-        for destination in destinations {
-            destination.fileRepresentative.downloadProgressDataHandler?(bytesWritten, totalBytesWritten, totalBytesExpectedToWrite)
-        }
+        destinations.downloadProgressDataHandler(bytesWritten, totalBytesWritten, totalBytesExpectedToWrite)
         
         guard totalBytesExpectedToWrite > 0 else { return }
         
         let p = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-        for destination in destinations {
-            destination.fileRepresentative.downloadProgressHandler?(p)
-        }
+        destinations.downloadProgressHandler(p)
     }
 }
 

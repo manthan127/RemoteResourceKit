@@ -69,9 +69,7 @@ private extension DownloadSession {
         do {
             try await self.download(urlRequest: req, destinations: destinations)
         } catch {
-            for destination in destinations {
-                destination.fileRepresentative.errorHandler?(error)
-            }
+            destinations.errorHandler(error)
         }
     }
     
