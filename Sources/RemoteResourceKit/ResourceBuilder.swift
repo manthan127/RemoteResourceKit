@@ -7,6 +7,8 @@
 
 import Foundation
 
+public protocol FileRepresentative {}
+
 @resultBuilder
 public struct ResourceBuilder {
     public typealias Component = [FileRepresentative]

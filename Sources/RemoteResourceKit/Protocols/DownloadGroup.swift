@@ -23,9 +23,7 @@ extension DownloadGroup {
 extension DownloadGroup {
     func makeMapping() -> [URLRequest: [FileDestination]] {
         var map: [URLRequest: [FileDestination]] = [:]
-        body.forEach {
-            $0.iterate(at: baseURL, map: &map)
-        }
+        body.loop(url: baseURL, map: &map)
         return map
     }
 }

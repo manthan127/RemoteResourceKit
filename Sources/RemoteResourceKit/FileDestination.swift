@@ -8,16 +8,16 @@
 import Foundation
 
 // TODO: - Probably can use better name
-public struct FileDestination {
+internal struct FileDestination {
     let folderURL: URL
-    let fileRepresentative: FileResource
+    let fileRepresentative: File
     
     var destinationURL: URL {
         folderURL.appendingPathComponent(fileRepresentative.fileName)
     }
 }
 
-internal extension FileDestination {
+extension FileDestination {
     func copyAndSendMessage(_ tempURL: URL) {
         do {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
@@ -31,7 +31,7 @@ internal extension FileDestination {
     }
 }
 
-internal extension [FileDestination] {
+extension [FileDestination] {
     private func notify(_ action: (FileDestination) -> Void) {
         for destination in self {
             action(destination)

@@ -16,10 +16,20 @@ public struct Folder: FileRepresentative {
         self.resources = resources
     }
     
-    public func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
+    internal func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
         let url = path.appendingPathComponent(name, isDirectory: true)
-        resources().forEach {
-            $0.iterate(at: url, map: &map)
+        resources().loop(url: url, map: &map)
+    }
+}
+
+extension [any FileRepresentative] {
+    func loop(url: URL, map: inout [URLRequest: [FileDestination]]) {
+        self.forEach {
+            if let folder = $0.self as? Folder {
+                folder.iterate(at: url, map: &map)
+            } else if let file = $0.self as? File {
+                file.iterate(at: url, map: &map)
+            }
         }
     }
 }
