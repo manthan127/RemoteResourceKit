@@ -16,19 +16,19 @@ public struct Folder: FileRepresentative {
         self.resources = resources
     }
     
-    internal func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
+    internal func iterate(at path: URL, map: inout [URLRequest: [FileDestination]], localMapping: inout [URL: Int]) {
         let url = path.appendingPathComponent(name, isDirectory: true)
-        resources().loop(url: url, map: &map)
+        resources().loop(url: url, map: &map, localMapping: &localMapping)
     }
 }
 
 extension [any FileRepresentative] {
-    func loop(url: URL, map: inout [URLRequest: [FileDestination]]) {
+    func loop(url: URL, map: inout [URLRequest: [FileDestination]], localMapping: inout [URL: Int]) {
         self.forEach {
             if let folder = $0.self as? Folder {
-                folder.iterate(at: url, map: &map)
+                folder.iterate(at: url, map: &map, localMapping: &localMapping)
             } else if let file = $0.self as? File {
-                file.iterate(at: url, map: &map)
+                file.iterate(at: url, map: &map, localMapping: &localMapping)
             }
         }
     }

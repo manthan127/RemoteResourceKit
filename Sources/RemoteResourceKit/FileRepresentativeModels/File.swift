@@ -51,8 +51,10 @@ public extension File {
 }
 
 internal extension File {
-    func iterate(at path: URL, map: inout [URLRequest: [FileDestination]]) {
-        map[urlRequest, default: []].append(.init(folderURL: path, fileRepresentative: self))
+    func iterate(at path: URL, map: inout [URLRequest: [FileDestination]], localMapping: inout [URL: Int]) {
+        let destination = FileDestination(folderURL: path, fileRepresentative: self)
+        localMapping[destination.destinationURL, default: 0] += 1
+        map[urlRequest, default: []].append(destination)
     }
     
     var fileName: String  {

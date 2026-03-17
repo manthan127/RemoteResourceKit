@@ -18,13 +18,27 @@ final public class DownloadSession: NSObject {
         self.resumeDataManager = url.map { ResumeDataHandler(url: $0) }
     }
     
-    public func download(_ downloadGroup: DownloadGroup, parallel: Bool = true) async {
-        let mapping = downloadGroup.makeMapping()
-        if parallel {
-            await downloadParallel(map: mapping)
-        } else {
-            await downloadSerial(map: mapping)
+    public func download(_ downloadGroup: DownloadGroup, parallel: Bool = true, completion: @escaping (_ canceled: Bool)->()) {
+        Task {
+            do {
+                try await download(downloadGroup, parallel: parallel)
+                completion(false)
+            } catch {
+                completion(true)
+            }
         }
+    }
+    
+    // Only throws when canceled the call and is Serial
+    public func download(_ downloadGroup: DownloadGroup, parallel: Bool = true) async throws {
+        let mapping = try downloadGroup.makeMapping()
+        try await Task {
+            if parallel {
+                try await downloadParallel(map: mapping)
+            } else {
+                try await downloadSerial(map: mapping)
+            }
+        }.value
     }
     
     public func cancel(resumeDataURL: URL? = nil) async {
@@ -49,15 +63,17 @@ final public class DownloadSession: NSObject {
 
 private extension DownloadSession {
     // TODO: - (user might even call cancel even before loop is finished)
-    func downloadSerial(map: [URLRequest: [FileDestination]]) async {
+    func downloadSerial(map: [URLRequest: [FileDestination]]) async throws {
         for (key, destinations) in map {
+            try Task.checkCancellation()
             await downloadAndHandleErrors(req: key, destinations: destinations)
         }
     }
     
-    func downloadParallel(map: [URLRequest: [FileDestination]]) async {
-        await withTaskGroup(of: Void.self) { group in
+    func downloadParallel(map: [URLRequest: [FileDestination]]) async throws {
+        try await withThrowingTaskGroup(of: Void.self) { group in
             for (key, destinations) in map {
+                try Task.checkCancellation()
                 group.addTask {
                     await self.downloadAndHandleErrors(req: key, destinations: destinations)
                 }

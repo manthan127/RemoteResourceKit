@@ -7,6 +7,10 @@
 
 import Foundation
 
+enum DownloadGroupError: Error {
+    case duplicateLocal(urls: [URL])
+}
+
 public protocol DownloadGroup {
     var baseURL: URL {get}
     var resumeDataURL: URL? {get}
@@ -21,9 +25,19 @@ extension DownloadGroup {
 }
 
 extension DownloadGroup {
-    func makeMapping() -> [URLRequest: [FileDestination]] {
+    func makeMapping() throws -> [URLRequest: [FileDestination]] {
         var map: [URLRequest: [FileDestination]] = [:]
-        body.loop(url: baseURL, map: &map)
-        return map
+        var localMapping: [URL: Int] = [:]
+        
+        body.loop(url: baseURL, map: &map, localMapping: &localMapping)
+        let duplicateURLs = localMapping.compactMap { url, count in
+            count > 1 ? url : nil
+        }
+        
+        if duplicateURLs.isEmpty {
+            return map
+        } else {
+            throw DownloadGroupError.duplicateLocal(urls: duplicateURLs)
+        }
     }
 }
