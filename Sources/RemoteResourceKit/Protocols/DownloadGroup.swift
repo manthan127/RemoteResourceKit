@@ -29,7 +29,7 @@ extension DownloadGroup {
         var map: [URLRequest: [FileDestination]] = [:]
         var localMapping: [URL: Int] = [:]
         
-        body.loop(url: baseURL, map: &map, localMapping: &localMapping)
+        body.loop(url: baseURL, properties: nil, map: &map, localMapping: &localMapping)
         let duplicateURLs = localMapping.compactMap { url, count in
             count > 1 ? url : nil
         }

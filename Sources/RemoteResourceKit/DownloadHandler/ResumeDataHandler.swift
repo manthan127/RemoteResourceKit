@@ -7,6 +7,7 @@
 
 import Foundation
 
+// TODO: - this is not tested yet, // also we are not deleting the data after it is used
 // can optimize by collection the mapping in batch and than saving the mapping in only one call
 actor ResumeDataHandler {
     nonisolated let url: URL
@@ -45,8 +46,9 @@ actor ResumeDataHandler {
         return try? Data(contentsOf: url.appendingPathComponent(name))
     }
 }
-    // MARK: - Persistence
-    /// Loads mapping.plist into memory
+
+// MARK: - Persistence
+/// Loads mapping.plist into memory
 private extension ResumeDataHandler {
     static func loadMappingFromDisk(plistURL: URL) -> [URL: String] {
         guard

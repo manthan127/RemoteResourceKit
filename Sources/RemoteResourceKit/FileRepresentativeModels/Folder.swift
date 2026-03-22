@@ -8,27 +8,39 @@
 import Foundation
 
 public struct Folder: FileRepresentative {
-    public let name: String
-    @ResourceBuilder public var resources: ()-> [any FileRepresentative]
+    let name: String
+    public let properties: URLRequestProperties?
+    @ResourceBuilder var resources: ()-> [any FileRepresentative]
     
-    public init(name: String, @ResourceBuilder  resources: @escaping () -> [any FileRepresentative]) {
+    public init(name: String, properties: URLRequestProperties? = nil, @ResourceBuilder  resources: @escaping () -> [any FileRepresentative]) {
         self.name = name
         self.resources = resources
+        self.properties = properties
     }
     
-    internal func iterate(at path: URL, map: inout [URLRequest: [FileDestination]], localMapping: inout [URL: Int]) {
+    internal func iterate(
+        at path: URL, parentProperties: URLRequestProperties?,
+        map: inout [URLRequest: [FileDestination]], localMapping: inout [URL: Int]
+    ) {
         let url = path.appendingPathComponent(name, isDirectory: true)
-        resources().loop(url: url, map: &map, localMapping: &localMapping)
+        resources().loop(url: url, properties: sendingProperties(parentProperties), map: &map, localMapping: &localMapping)
+    }
+    
+    func sendingProperties(_ properties: URLRequestProperties?) -> URLRequestProperties? {
+        self.properties ?? properties
     }
 }
 
 extension [any FileRepresentative] {
-    func loop(url: URL, map: inout [URLRequest: [FileDestination]], localMapping: inout [URL: Int]) {
+    func loop(
+        url: URL, properties: URLRequestProperties?, 
+        map: inout [URLRequest: [FileDestination]], localMapping: inout [URL: Int]
+    ) {
         self.forEach {
             if let folder = $0.self as? Folder {
-                folder.iterate(at: url, map: &map, localMapping: &localMapping)
+                folder.iterate(at: url, parentProperties: properties, map: &map, localMapping: &localMapping)
             } else if let file = $0.self as? File {
-                file.iterate(at: url, map: &map, localMapping: &localMapping)
+                file.iterate(at: url, properties: properties, map: &map, localMapping: &localMapping)
             }
         }
     }

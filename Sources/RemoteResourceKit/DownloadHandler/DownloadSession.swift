@@ -90,14 +90,9 @@ private extension DownloadSession {
     }
     
     func download(urlRequest: URLRequest, destinations: [FileDestination]) async throws {
-        // MARK: - might need to handle for each element  individually because of some property like always download in future
-        if let destination = destinations.first(where: { FileManager.default.fileExists(at: $0.destinationURL) }) {
-            fileAlreadyExists(at: destination.destinationURL, destinations: destinations)
-            return
-        }
-        
-        let resumeData = await resumeDataManager?.data(urlRequest: urlRequest)
+        let destinations = destinations.filteredForDownloading()
        
+        let resumeData = await resumeDataManager?.data(urlRequest: urlRequest)
         try await withCheckedThrowingContinuation { continuation in
             let task: URLSessionTask = if let resumeData {
                 session.downloadTask(withResumeData: resumeData)
@@ -109,15 +104,6 @@ private extension DownloadSession {
                 await registry.create(remoteURL: urlRequest, task: task)
                 task.resume()
             }
-        }
-    }
-    
-    func fileAlreadyExists(at url: URL, destinations: [FileDestination]) {
-        for destination in destinations {
-            if FileManager.default.fileExists(at: destination.destinationURL) {
-                continue
-            }
-            destination.copyAndSendMessage(url)
         }
     }
 }

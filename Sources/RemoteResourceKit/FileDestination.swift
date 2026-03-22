@@ -10,6 +10,7 @@ import Foundation
 // TODO: - Probably can use better name
 internal struct FileDestination {
     let folderURL: URL
+    let properties: URLRequestProperties
     let fileRepresentative: File
     
     var destinationURL: URL {
@@ -50,5 +51,27 @@ extension [FileDestination] {
     
     func copyAndSendMessage(_ tempURL: URL) {
         notify { $0.copyAndSendMessage(tempURL) }
+    }
+    
+    func findExistingURL() -> URL? {
+        self.first(where: { FileManager.default.fileExists(at: $0.destinationURL) })?.destinationURL
+    }
+    
+    func filteredForDownloading() -> [FileDestination] {
+        guard let url = findExistingURL() else { return self }
+        
+        var dests: [FileDestination] = []
+        for destination in self {
+            switch destination.properties.downloadStrategy {
+            case .alwaysDownload:
+                dests.append(destination)
+            default:
+                if FileManager.default.fileExists(at: destination.destinationURL) {
+                    continue
+                }
+                destination.copyAndSendMessage(url)
+            }
+        }
+        return dests
     }
 }
